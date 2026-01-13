@@ -1,0 +1,4 @@
+This is a sample file for testing the static file server.
+
+You can download this file via HTTP GET request to:
+http://localhost:3000/sample.txt

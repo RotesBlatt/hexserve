@@ -1,0 +1,25 @@
+services:
+  static-file-server:
+    build: .
+    container_name: hexserve
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # Mount external directory for served files
+      # Modify the host path to point to your file location
+      - lolstaticdata_lol-static-data:/data:ro
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - SERVE_DIR=/data
+    restart: unless-stopped
+    networks:
+      - hexserve-network
+
+networks:
+  hexserve-network:
+    driver: bridge
+
+volumes:
+  lolstaticdata_lol-static-data:
+    external: true  # Use the volume created by lolstaticdata
