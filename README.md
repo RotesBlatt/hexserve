@@ -48,6 +48,9 @@ cp .env.example .env
   - Use `localhost` or `127.0.0.1` for local access only
 - **SERVE_DIR**: Directory to serve files from (default: `./public`)
   - Can be an absolute or relative path
+- **URL_PREFIX**: URL prefix for accessing files (default: `/latest`)
+  - Files will be accessible at `http://host:port/latest/filename`
+  - Should start with `/` (will be added automatically if missing)
 
 ### Example Configuration
 
@@ -55,6 +58,7 @@ cp .env.example .env
 PORT=8080
 HOST=0.0.0.0
 SERVE_DIR=./files
+URL_PREFIX=/latest
 ```
 
 ## Usage
@@ -176,25 +180,27 @@ ports:
 
 ## Accessing Files
 
+Files are served at the configured URL prefix (default: `/latest`).
+
 Once the server is running, files can be accessed via HTTP GET requests:
 
 ```
-http://localhost:3000/sample.txt
-http://localhost:3000/path/to/your/file.pdf
+http://localhost:3000/latest/sample.txt
+http://localhost:3000/latest/path/to/your/file.pdf
 ```
 
-Replace `localhost:3000` with your configured HOST and PORT.
+Replace `localhost:3000` with your configured HOST and PORT, and `/latest` with your configured URL_PREFIX.
 
 ### Example with curl
 
 ```bash
-curl http://localhost:3000/sample.txt
+curl http://localhost:3000/latest/sample.txt
 ```
 
 ### Example with wget
 
 ```bash
-wget http://localhost:3000/sample.txt
+wget http://localhost:3000/latest/sample.txt
 ```
 
 ## Project Structure

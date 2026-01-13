@@ -19,8 +19,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
-// Path traversal protection middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
+// Path traversal protection middleware for the URL prefix path
+app.use(config.urlPrefix, (req: Request, res: Response, next: NextFunction) => {
     // Resolve the requested path and ensure it's within the serve directory
     const requestedPath = path.normalize(req.path);
     const resolvedPath = path.join(config.serveDir, requestedPath);
@@ -38,8 +38,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
-// Serve static files from the configured directory
-app.use(express.static(config.serveDir, {
+// Serve static files from the configured directory at the URL prefix
+app.use(config.urlPrefix, express.static(config.serveDir, {
     dotfiles: 'deny', // Don't serve hidden files
     index: false,     // Don't serve directory index
 }));
@@ -65,5 +65,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 app.listen(config.port, config.host, () => {
     console.log(`Static file server running at http://${config.host}:${config.port}`);
     console.log(`Serving files from: ${config.serveDir}`);
+    console.log(`URL prefix: ${config.urlPrefix}`);
+    console.log(`Example: http://${config.host}:${config.port}${config.urlPrefix}/sample.txt`);
     console.log(`Press Ctrl+C to stop the server`);
 });

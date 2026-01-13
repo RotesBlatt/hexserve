@@ -8,6 +8,7 @@ export interface ServerConfig {
     port: number;
     host: string;
     serveDir: string;
+    urlPrefix: string;
 }
 
 /**
@@ -19,10 +20,19 @@ export function getConfig(): ServerConfig {
     const serveDir = process.env.SERVE_DIR
         ? path.resolve(process.env.SERVE_DIR)
         : path.resolve('./public');
+    // URL prefix should start with / and not end with /
+    let urlPrefix = process.env.URL_PREFIX || '/latest';
+    if (!urlPrefix.startsWith('/')) {
+        urlPrefix = '/' + urlPrefix;
+    }
+    if (urlPrefix.endsWith('/')) {
+        urlPrefix = urlPrefix.slice(0, -1);
+    }
 
     return {
         port,
         host,
         serveDir,
+        urlPrefix,
     };
 }
