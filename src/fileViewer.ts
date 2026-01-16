@@ -76,14 +76,21 @@ export function createFileViewerRouter(baseDir: string, urlPrefix: string = ''):
                 });
 
                 // Determine parent directory path
-                const parentPath = fullPath !== absoluteBaseDir 
+                const parentPath = fullPath !== absoluteBaseDir
                     ? urlPrefix + '/' + (path.relative(absoluteBaseDir, path.dirname(fullPath)).replace(/\\/g, '/') || '')
                     : null;
 
                 res.send(generateDirectoryHTML(displayPath, itemsList, parentPath));
             } else {
                 const content = await fs.readFile(fullPath, 'utf-8');
-                res.type('text/plain').send(content);
+
+                // Detect JSON files and set appropriate content type
+                const ext = path.extname(fullPath).toLowerCase();
+                if (ext === '.json') {
+                    res.type('application/json').send(content);
+                } else {
+                    res.type('text/plain').send(content);
+                }
             }
         } catch (error: any) {
             console.error('File viewer error:', error);
@@ -94,7 +101,7 @@ export function createFileViewerRouter(baseDir: string, urlPrefix: string = ''):
     return router;
 }
 
-function generateDirectoryHTML(currentPath: string, items: any[], parentPath: string | null): string {
+export function generateDirectoryHTML(currentPath: string, items: any[], parentPath: string | null): string {
     return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <html>
 <head>

@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { getConfig } from './config.js';
-import { createFileViewerRouter } from './fileViewer.js';
+import { createFileViewerRouter, generateDirectoryHTML } from './fileViewer.js';
 
 const app = express();
 const config = getConfig();
@@ -42,26 +42,14 @@ app.use(config.urlPrefix, (req: Request, res: Response, next: NextFunction) => {
 // Root path shows index with configured prefix as directory
 app.get('/', (req: Request, res: Response) => {
     const prefixName = config.urlPrefix.replace(/^\//, '');
-    const html = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
-<head>
-<title>Index of /</title>
-<style>
-table { border-collapse: collapse; }
-td { padding: 2px 20px 2px 2px; }
-th { padding: 2px 20px 2px 2px; text-align: left; }
-</style>
-</head>
-<body>
-<h1>Index of /</h1>
-<table>
-<tr><th>Name</th><th>Last modified</th><th>Size</th></tr>
-<tr><th colspan="3"><hr></th></tr>
-<tr><td><a href="${config.urlPrefix}/">${prefixName}/</a></td><td align="right">-</td><td align="right">-</td></tr>
-<tr><th colspan="3"><hr></th></tr>
-</table>
-</body>
-</html>`;
+    const items = [{
+        name: prefixName,
+        isDirectory: true,
+        path: config.urlPrefix + '/',
+        size: '-',
+        modified: '-'
+    }];
+    const html = generateDirectoryHTML('/', items, null);
     res.send(html);
 });
 
