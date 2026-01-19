@@ -5,10 +5,16 @@ import path from 'path';
 dotenv.config();
 
 export interface ServerConfig {
+    // Basic Server Configuration
     port: number;
     host: string;
     serveDir: string;
     urlPrefix: string;
+
+    // Riot API Proxy Configuration
+    riotApiKey: string;
+    riotApiBaseUrl: string;
+    proxyPrefix: string;
 }
 
 /**
@@ -29,10 +35,24 @@ export function getConfig(): ServerConfig {
         urlPrefix = urlPrefix.slice(0, -1);
     }
 
+    // Riot API Configuration
+    const riotApiKey = process.env.RIOT_API_KEY || '';
+    const riotApiBaseUrl = process.env.RIOT_API_BASE_URL || 'https://euw1.api.riotgames.com';
+    let proxyPrefix = process.env.PROXY_PREFIX || '/riot-api';
+    if (!proxyPrefix.startsWith('/')) {
+        proxyPrefix = '/' + proxyPrefix;
+    }
+    if (proxyPrefix.endsWith('/')) {
+        proxyPrefix = proxyPrefix.slice(0, -1);
+    }
+
     return {
         port,
         host,
         serveDir,
         urlPrefix,
+        riotApiKey,
+        riotApiBaseUrl,
+        proxyPrefix,
     };
 }
