@@ -372,4 +372,4 @@ Place files in the `./data` directory (or your custom mounted directory). The fi
 
 ## License
 
-ISC
+MIT
