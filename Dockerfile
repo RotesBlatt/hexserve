@@ -22,6 +22,9 @@ RUN npm install typescript @types/node @types/express --save-dev && \
 # Create default serve directory
 RUN mkdir -p /app/public
 
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chmod 777 /app/logs
+
 # Expose the default port
 EXPOSE 3000
 

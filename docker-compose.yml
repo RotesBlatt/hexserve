@@ -8,10 +8,18 @@ services:
       # Mount external directory for served files
       # Modify the host path to point to your file location
       - lolstaticdata_lol-static-data:/data:ro
+      # Persistent logs volume (survives container rebuilds)
+      - hexserve-logs:/app/logs
     environment:
-      - PORT=3000
-      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+      - HOST=${HOST:-0.0.0.0}
       - SERVE_DIR=/data
+      - URL_PREFIX=${URL_PREFIX:-/latest}
+      - RIOT_API_KEY=${RIOT_API_KEY}
+      - RIOT_API_BASE_URL=${RIOT_API_BASE_URL:-https://euw1.api.riotgames.com}
+      - PROXY_PREFIX=${PROXY_PREFIX:-/riot-api}
+      - NODE_ENV=${NODE_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     restart: unless-stopped
     networks:
       - hexserve-network
@@ -23,3 +31,5 @@ networks:
 volumes:
   lolstaticdata_lol-static-data:
     external: true  # Use the volume created by lolstaticdata
+  hexserve-logs:
+    driver: local  # Persistent volume for application logs
