@@ -3,6 +3,32 @@ import https from 'https';
 import http from 'http';
 
 /**
+ * Validates if a URL is a valid Riot Games API endpoint
+ * @param url - The URL to validate
+ * @returns true if the URL matches the pattern https://{region}.api.riotgames.com
+ */
+function isValidRiotApiUrl(url: string): boolean {
+    try {
+        const urlObj = new URL(url);
+
+        // Must use HTTPS
+        if (urlObj.protocol !== 'https:') {
+            return false;
+        }
+
+        // Must match the pattern: {region}.api.riotgames.com
+        // Valid patterns:
+        // - Regional: europe.api.riotgames.com, americas.api.riotgames.com, asia.api.riotgames.com, sea.api.riotgames.com
+        // - Platform: euw1.api.riotgames.com, na1.api.riotgames.com, kr.api.riotgames.com, etc.
+        const validPattern = /^[a-z0-9]+\.api\.riotgames\.com$/i;
+
+        return validPattern.test(urlObj.hostname);
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
  * Create a Riot API reverse proxy router
  * Forwards requests to the Riot Games API and automatically injects the API key
  * 
@@ -27,6 +53,16 @@ export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): R
 
             // Get base URL from query parameter or use default
             const requestBasePath = (req.query.requestBasePath as string) || defaultBaseUrl;
+
+            // Validate the base URL to prevent abuse
+            if (!isValidRiotApiUrl(requestBasePath)) {
+                console.warn(`[Riot API Proxy] Blocked invalid base URL: ${requestBasePath}`);
+                return res.status(400).json({
+                    error: 'Invalid Base URL',
+                    message: 'The requestBasePath must be a valid Riot Games API URL (https://{region}.api.riotgames.com)',
+                    example: 'https://euw1.api.riotgames.com or https://europe.api.riotgames.com'
+                });
+            }
 
             // Remove requestBasePath from query string for the actual API call
             const queryParams = { ...req.query };
