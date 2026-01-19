@@ -5,6 +5,13 @@ import path from 'path';
 dotenv.config();
 
 export interface ServerConfig {
+    // General settings 
+    nodeEnv: string;
+
+    // Logging settings
+    logLevel: string;
+    logDir: string;
+
     // Basic Server Configuration
     port: number;
     host: string;
@@ -21,6 +28,16 @@ export interface ServerConfig {
  * Get server configuration from environment variables
  */
 export function getConfig(): ServerConfig {
+    // General settings
+    const nodeEnv = process.env.NODE_ENV || 'development';
+
+    // Logging settings
+    const logLevel = process.env.LOG_LEVEL || 'info';
+    const logDir = process.env.LOG_DIR
+        ? path.resolve(process.env.LOG_DIR)
+        : path.resolve('./logs');
+
+    // Basic Server Configuration
     const port = parseInt(process.env.PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';
     const serveDir = process.env.SERVE_DIR
@@ -46,7 +63,12 @@ export function getConfig(): ServerConfig {
         proxyPrefix = proxyPrefix.slice(0, -1);
     }
 
+    
+
     return {
+        nodeEnv,
+        logLevel,
+        logDir,
         port,
         host,
         serveDir,

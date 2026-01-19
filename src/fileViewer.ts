@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
+import { logWarning, logError } from './logger.js';
 
 function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -21,7 +22,12 @@ export function createFileViewerRouter(baseDir: string, urlPrefix: string = ''):
 
             // Security check: ensure the resolved path is within the base directory
             if (!fullPath.startsWith(absoluteBaseDir)) {
-                console.warn(`Path traversal attempt blocked: ${req.path} -> ${fullPath}`);
+                logWarning('Path traversal attempt blocked in file viewer', {
+                    requestPath: req.path,
+                    resolvedPath: fullPath,
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent']
+                });
                 return res.status(403).send('Forbidden');
             }
 
@@ -93,7 +99,12 @@ export function createFileViewerRouter(baseDir: string, urlPrefix: string = ''):
                 }
             }
         } catch (error: any) {
-            console.error('File viewer error:', error);
+            logError(error instanceof Error ? error : new Error(String(error)), {
+                context: 'File viewer error',
+                url: req.url,
+                method: req.method,
+                ip: req.ip
+            });
             res.status(500).send('Internal Server Error');
         }
     });

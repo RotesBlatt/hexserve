@@ -1,6 +1,8 @@
 import express, { Router, Request, Response } from 'express';
 import https from 'https';
 import http from 'http';
+import { validateRiotProxyRequest, handleValidationErrors } from './validators.js';
+import { logInfo, logError, logWarning, logDebug } from './logger.js';
 
 /**
  * Validates if a URL is a valid Riot Games API endpoint
@@ -39,12 +41,19 @@ function isValidRiotApiUrl(url: string): boolean {
 export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): Router {
     const router = Router();
 
+    // Apply validation middleware
+    router.use(validateRiotProxyRequest, handleValidationErrors);
+
     // Catch all routes using middleware instead of route
     router.use(async (req: Request, res: Response) => {
         try {
             // Check if API key is configured
             if (!apiKey) {
-                console.warn('Riot API proxy request without configured API key');
+                logWarning('Riot API proxy request without configured API key', {
+                    url: req.url,
+                    method: req.method,
+                    ip: req.ip
+                });
                 return res.status(500).json({
                     error: 'Configuration Error',
                     message: 'Riot API key not configured'
@@ -54,9 +63,14 @@ export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): R
             // Get base URL from query parameter or use default
             const requestBasePath = (req.query.requestBasePath as string) || defaultBaseUrl;
 
-            // Validate the base URL to prevent abuse
+            // Validate the base URL to prevent abuse (validation already done by middleware, but double-check)
             if (!isValidRiotApiUrl(requestBasePath)) {
-                console.warn(`[Riot API Proxy] Blocked invalid base URL: ${requestBasePath}`);
+                logWarning('Blocked invalid Riot API base URL', {
+                    requestBasePath,
+                    url: req.url,
+                    method: req.method,
+                    ip: req.ip
+                });
                 return res.status(400).json({
                     error: 'Invalid Base URL',
                     message: 'The requestBasePath must be a valid Riot Games API URL (https://{region}.api.riotgames.com)',
@@ -77,7 +91,12 @@ export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): R
             const targetPath = req.path;
             const targetUrl = `${requestBasePath}${targetPath}${queryString}`;
 
-            console.log(`[Riot API Proxy] ${req.method} ${targetUrl}`);
+            logDebug('Riot API proxy request', {
+                method: req.method,
+                targetUrl,
+                path: targetPath,
+                basePath: requestBasePath
+            });
 
             // Parse target URL
             const urlObj = new URL(targetUrl);
@@ -124,7 +143,12 @@ export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): R
 
             // Handle request errors
             apiRequest.on('error', (error) => {
-                console.error('[Riot API Proxy] Request error:', error);
+                logError(error, {
+                    context: 'Riot API Proxy request error',
+                    targetUrl,
+                    method: req.method,
+                    ip: req.ip
+                });
                 if (!res.headersSent) {
                     res.status(502).json({
                         error: 'Bad Gateway',
@@ -136,6 +160,11 @@ export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): R
 
             // Handle request timeout
             apiRequest.setTimeout(30000, () => {
+                logWarning('Riot API request timed out', {
+                    targetUrl,
+                    method: req.method,
+                    timeout: 30000
+                });
                 apiRequest.destroy();
                 if (!res.headersSent) {
                     res.status(504).json({
@@ -158,7 +187,12 @@ export function createRiotProxyRouter(apiKey: string, defaultBaseUrl: string): R
             apiRequest.end();
 
         } catch (error) {
-            console.error('[Riot API Proxy] Error:', error);
+            logError(error instanceof Error ? error : new Error(String(error)), {
+                context: 'Riot API Proxy error',
+                url: req.url,
+                method: req.method,
+                ip: req.ip
+            });
             if (!res.headersSent) {
                 res.status(500).json({
                     error: 'Internal Server Error',
