@@ -2,7 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import https from 'https';
 import http from 'http';
 import { validateRiotProxyRequest, handleValidationErrors } from './validators.js';
-import { logInfo, logError, logWarning, logDebug } from './logger.js';
+import { logInfo, logError, logWarning, logDebug } from '../logger.js';
 
 /**
  * Validates if a URL is a valid Riot Games API endpoint

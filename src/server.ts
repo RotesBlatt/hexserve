@@ -1,10 +1,14 @@
-import express, { Request, Response, NextFunction } from 'express';
-import path from 'path';
+import express from 'express';
 import fs from 'fs';
 import { getConfig } from './config.js';
-import { createFileViewerRouter, generateDirectoryHTML } from './fileViewer.js';
-import { createRiotProxyRouter } from './riotProxy.js';
-import logger, { logInfo, logWarning, logError, logRequest, setupLogger } from './logger.js';
+import { createFileViewerRouter } from './fileServer/router.js';
+import { createRiotProxyRouter } from './riotProxy/router.js';
+import { logInfo, logWarning, setupLogger } from './logger.js';
+import { requestLoggerMiddleware } from './middleware/requestLogger.js';
+import { createPathTraversalProtection } from './middleware/pathTraversal.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { createHealthRouter } from './routes/health.js';
+import { createRootRouter } from './routes/root.js';
 
 const app = express();
 const config = getConfig();
@@ -18,18 +22,14 @@ if (!fs.existsSync(config.serveDir)) {
     fs.mkdirSync(config.serveDir, { recursive: true });
 }
 
-// Logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-    const startTime = Date.now();
+// Apply global middlewares
+app.use(requestLoggerMiddleware);
 
-    // Log when response finishes
-    res.on('finish', () => {
-        const responseTime = Date.now() - startTime;
-        logRequest(req.method, req.url, res.statusCode, responseTime);
-    });
+// Health check endpoint (before other routes)
+app.use(createHealthRouter(config));
 
-    next();
-});
+// Root path router
+app.use(createRootRouter(config.urlPrefix));
 
 // Riot API Proxy (before path traversal protection)
 if (config.riotApiKey) {
@@ -42,67 +42,15 @@ if (config.riotApiKey) {
     logWarning('RIOT_API_KEY not configured. Riot API proxy disabled.');
 }
 
-// Path traversal protection middleware for the URL prefix path
-app.use(config.urlPrefix, (req: Request, res: Response, next: NextFunction) => {
-    // Resolve the requested path and ensure it's within the serve directory
-    const requestedPath = path.normalize(req.path);
-    const resolvedPath = path.join(config.serveDir, requestedPath);
-    const normalizedPath = path.resolve(resolvedPath);
-
-    // Check if the resolved path is still within the serve directory
-    if (!normalizedPath.startsWith(path.resolve(config.serveDir))) {
-        logWarning('Path traversal attempt blocked', {
-            requestPath: req.path,
-            ip: req.ip,
-            userAgent: req.headers['user-agent']
-        });
-        return res.status(403).json({
-            error: 'Forbidden',
-            message: 'Access denied'
-        });
-    }
-
-    next();
-});
-
-// Root path shows index with configured prefix as directory
-app.get('/', (req: Request, res: Response) => {
-    const prefixName = config.urlPrefix.replace(/^\//, '');
-    const items = [{
-        name: prefixName,
-        isDirectory: true,
-        path: config.urlPrefix + '/',
-        size: '-',
-        modified: '-'
-    }];
-    const html = generateDirectoryHTML('/', items, null);
-    res.send(html);
-});
+// Path traversal protection for file browser
+app.use(config.urlPrefix, createPathTraversalProtection(config.serveDir));
 
 // File browser with directory listing and static file serving
 app.use(config.urlPrefix, createFileViewerRouter(config.serveDir, config.urlPrefix));
 
-// Handle 404 errors
-app.use((req: Request, res: Response) => {
-    res.status(404).json({
-        error: 'File not found',
-        path: req.path,
-    });
-});
-
-// Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    logError(err, {
-        url: req.url,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-    });
-    res.status(500).json({
-        error: 'Internal server error',
-        message: err.message,
-    });
-});
+// 404 and error handlers (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Start the server
 app.listen(config.port, config.host, () => {

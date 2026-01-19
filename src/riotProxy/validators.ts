@@ -1,6 +1,6 @@
 import { query, validationResult, ValidationChain } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
-import { logWarning } from './logger.js';
+import { logWarning } from '../logger.js';
 
 /**
  * Middleware to handle validation errors

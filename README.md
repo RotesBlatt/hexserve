@@ -305,22 +305,34 @@ wget http://localhost:3000/latest/sample.txt
 ```
 .
 ├── src/
-│   ├── config.ts       # Configuration management
-│   ├── server.ts       # Main server file
-│   ├── fileViewer.ts   # Directory browser & file serving
-│   └── riotProxy.ts    # Riot API reverse proxy
-├── public/             # Default directory for served files (local)
-│   └── sample.txt      # Sample file
-├── data/               # Default directory for Docker volume mount
-├── dist/               # Compiled JavaScript (generated)
-├── .env                # Environment configuration
-├── .env.example        # Example environment configuration
-├── Dockerfile          # Docker image definition
-├── docker-compose.yml  # Docker Compose configuration
-├── .dockerignore       # Docker build exclusions
-├── package.json        # Project dependencies
-├── tsconfig.json       # TypeScript configuration
-└── README.md           # This file
+│   ├── fileServer/
+│   │   └── router.ts          # File browser & static file serving
+│   ├── riotProxy/
+│   │   ├── router.ts          # Riot API reverse proxy
+│   │   └── validators.ts      # Request validation for Riot API
+│   ├── middleware/
+│   │   ├── errorHandler.ts    # 404 and 500 error handlers
+│   │   ├── pathTraversal.ts   # Path traversal protection
+│   │   └── requestLogger.ts   # HTTP request logging
+│   ├── routes/
+│   │   ├── health.ts          # Health check endpoint
+│   │   └── root.ts            # Root directory listing
+│   ├── config.ts              # Configuration management
+│   ├── logger.ts              # Winston logger setup
+│   └── server.ts              # Main application entry point
+├── logs/                       # Application logs (auto-created, Docker volume)
+├── public/                     # Default directory for served files (local)
+│   └── sample.txt              # Sample file
+├── data/                       # Default directory for Docker volume mount
+├── dist/                       # Compiled JavaScript (generated)
+├── .env                        # Environment configuration
+├── .env.example                # Example environment configuration
+├── Dockerfile                  # Docker image definition
+├── docker-compose.yml          # Docker Compose configuration
+├── .dockerignore               # Docker build exclusions
+├── package.json                # Project dependencies
+├── tsconfig.json               # TypeScript configuration
+└── README.md                   # This file
 ```
 
 ## Adding Files to Serve

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
-import { logWarning, logError } from './logger.js';
+import { logWarning, logError } from '../logger.js';
 
 function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
