@@ -3,7 +3,7 @@ services:
     build: .
     container_name: hexserve
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     volumes:
       # Mount external directory for served files
       # Modify the host path to point to your file location
